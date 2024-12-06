@@ -1,0 +1,14 @@
+1-Task_Example/.devcontainer/
+1-Task_Example/.vscode/
+1-Task_Example/build/
+1-Task_Example/sdkconfig.ci
+
+2-Sync_Signal-Example/.devcontainer/
+2-Sync_Signal-Example/.vscode/
+2-Sync_Signal-Example/build/
+2-Sync_Signal-Example/sdkconfig.ci
+
+3-DataComm_Example/.devcontainer/
+3-DataComm_Example/.vscode/
+3-DataComm_Example/build/
+3-DataComm_Example/sdkconfig.ci
