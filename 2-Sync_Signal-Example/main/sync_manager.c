@@ -14,10 +14,16 @@ void Task1(void *pvParameters);
 void Task2(void *pvParameters);
 void Task3(void *pvParameters);
 
+#if SEM_TYPE == THREE_BIN_SYNC   
 // Semaphore handles
 SemaphoreHandle_t SemTask1;
 SemaphoreHandle_t SemTask2;
 SemaphoreHandle_t SemTask3;
+#elif SEM_TYPE == MUTEX 
+// Shared buffer and mutex
+char sharedBuffer[100];
+SemaphoreHandle_t bufferMutex;
+#endif
 
 // Task creation function implementation
 void CreateTasks(void)
@@ -37,6 +43,7 @@ void CreateTasks(void)
 //Semaphore creation function implementation
 void CreateSemaphores(void)
 {
+    #if SEM_TYPE == THREE_BIN_SYNC 
     // Create binary semaphores
     SemTask1 = xSemaphoreCreateBinary();
     SemTask2 = xSemaphoreCreateBinary();
@@ -51,11 +58,22 @@ void CreateSemaphores(void)
 
     // Give the first semaphore to start the sequence
     xSemaphoreGive(SemTask1);
+    #elif SEM_TYPE == MUTEX 
+    // Create the mutex
+    bufferMutex = xSemaphoreCreateMutex();
+    if (bufferMutex == NULL)
+    {
+        printf("\n\n*****Mutex creation failed!*****\n\n");
+        for (;;); // Halt if semaphore creation fails
+    }
+    printf("\n\n*****Mutex created successfully!*****\n\n"); 
+    #endif
 }
 
 // Task1 function
 void Task1(void *pvParameters)
 {
+    #if SEM_TYPE == THREE_BIN_SYNC
     (void)pvParameters;
     for (;;)
     {
@@ -69,11 +87,34 @@ void Task1(void *pvParameters)
             xSemaphoreGive(SemTask2);
         }
     }
+    #elif SEM_TYPE == MUTEX 
+    (void)pvParameters;
+    int counter = 0;
+    for (;;)
+    {
+        // Lock the mutex
+        if (xSemaphoreTake(bufferMutex, portMAX_DELAY) == pdTRUE)
+        {
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
+
+            // Modify the shared buffer
+            printf("Task One - Running - 1\n");
+            snprintf(sharedBuffer, sizeof(sharedBuffer), "Message %d", counter++);
+            printf("Producer: Updated buffer to '%s'\n\n", sharedBuffer);
+
+            // Unlock the mutex
+            xSemaphoreGive(bufferMutex);
+        }
+        vTaskDelay(1 / portTICK_PERIOD_MS);
+    }
+    #endif
+
 }
 
 // Task2 function
 void Task2(void *pvParameters)
 {
+    #if SEM_TYPE == THREE_BIN_SYNC 
     (void)pvParameters;
     for (;;)
     {
@@ -87,11 +128,31 @@ void Task2(void *pvParameters)
             xSemaphoreGive(SemTask3);
         }
     }
+    #elif SEM_TYPE == MUTEX 
+    (void)pvParameters;
+    for (;;)
+    {
+        // Lock the mutex
+        if (xSemaphoreTake(bufferMutex, portMAX_DELAY) == pdTRUE)
+        {
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
+
+            // Access the shared buffer
+            printf("Task Two - Running - 2\n");
+            printf("Consumer1: Read buffer as '%s'\n\n", sharedBuffer);
+
+            // Unlock the mutex
+            xSemaphoreGive(bufferMutex);
+        }
+        vTaskDelay(1 / portTICK_PERIOD_MS);
+    }
+    #endif
 }
 
 // Task3 function
 void Task3(void *pvParameters)
 {
+    #if SEM_TYPE == THREE_BIN_SYNC 
     (void)pvParameters;
     for (;;)
     {
@@ -105,5 +166,24 @@ void Task3(void *pvParameters)
             xSemaphoreGive(SemTask1);
         }
     }
+    #elif SEM_TYPE == MUTEX 
+    (void)pvParameters;
+    for (;;)
+    {
+        // Lock the mutex
+        if (xSemaphoreTake(bufferMutex, portMAX_DELAY) == pdTRUE)
+        {
+            vTaskDelay(2000 / portTICK_PERIOD_MS);
+
+            // Access the shared buffer
+            printf("Task Three - Running - 3\n");
+            printf("Consumer2: Read buffer as '%s'\n\n", sharedBuffer);
+
+            // Unlock the mutex
+            xSemaphoreGive(bufferMutex);
+        }
+        vTaskDelay(1 / portTICK_PERIOD_MS);
+    }
+    #endif
 }
 
