@@ -84,7 +84,7 @@ void Task1(void *pvParameters)
             vTaskDelay(1000 / portTICK_PERIOD_MS);
 
             // Signal Task2
-            xSemaphoreGive(SemTask2);
+            xSemaphoreGive(SemTask2);MUTEX
         }
     }
     #elif SEM_TYPE == MUTEX 
